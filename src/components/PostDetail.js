@@ -3,19 +3,20 @@ import Link from "next/link";
 
 export default function PostDetail({ post }) {
   const [loading, setLoading] = useState(false);
-  const [currentPost, setCurrentPost] = useState(post);
+  const [currentPost, setCurrentPost] = useState(null);
 
-  
   useEffect(() => {
     if (post) {
       setLoading(true);
       const timer = setTimeout(() => {
         setCurrentPost(post);
         setLoading(false);
-      }, 500); 
-      return () => clearTimeout(timer);
+      }, 300); 
+
+      return () => clearTimeout(timer); 
     } else {
       setCurrentPost(null);
+      setLoading(false);
     }
   }, [post]);
 
@@ -61,4 +62,3 @@ export default function PostDetail({ post }) {
     </div>
   );
 }
-

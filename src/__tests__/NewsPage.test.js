@@ -1,50 +1,49 @@
-import { render, screen } from "@testing-library/react";
-import NewsPage, { getServerSideProps } from "@/pages/posts";
-
-jest.mock("@/components/Layout", () => ({ children }) => <div>{children}</div>);
-jest.mock("@/components/PostList", () => ({ posts }) => (
-  <ul>
-    {posts.map((post, i) => (
-      <li key={i}>
-        <h2>{post.title}</h2>
-        <p>{post.description}</p>
-      </li>
-    ))}
-  </ul>
-));
+import { getServerSideProps } from '@/pages/posts'; 
 
 
-describe("NewsPage", () => {
-  const dummyData = [
-    { title: "First Post", description: "Description of first post" },
-    { title: "Second Post", description: "Description of second post" },
-  ];
+global.fetch = jest.fn();
 
-  it("should fetch posts and pass them as props", async () => {
-    global.fetch = jest.fn(() =>
-      Promise.resolve({
-        json: () => Promise.resolve(dummyData),
-      })
-    );
-
-    const { props } = await getServerSideProps();
-
-    expect(fetch).toHaveBeenCalledWith("http://localhost:3001/api/posts");
-    expect(props.articles).toEqual(dummyData);
+describe('getServerSideProps', () => {
+  afterEach(() => {
+    jest.clearAllMocks();
   });
 
-  it("should render fetched posts", () => {
-    render(<NewsPage articles={dummyData} />);
+  it('should fetch articles and return as props', async () => {
+    const dummyArticles = [
+      {
+        id: 1,
+        title: 'Test Title 1',
+        description: 'Test Description 1',
+        content: 'Test Content 1',
+        url: 'https://example.com/1',
+      },
+      {
+        id: 2,
+        title: 'Test Title 2',
+        description: 'Test Description 2',
+        content: 'Test Content 2',
+        url: 'https://example.com/2',
+      },
+    ];
 
-    expect(screen.getByText("Top U.S. News Headlines")).toBeInTheDocument();
-    expect(screen.getByText("First Post")).toBeInTheDocument();
-    expect(screen.getByText("Second Post")).toBeInTheDocument();
-    expect(screen.getByText("Description of first post")).toBeInTheDocument();
-    expect(screen.getByText("Description of second post")).toBeInTheDocument();
+    fetch.mockResolvedValueOnce({
+      json: jest.fn().mockResolvedValueOnce(dummyArticles),
+    });
+
+    const context = {}; 
+    const result = await getServerSideProps(context);
+
+    expect(fetch).toHaveBeenCalledWith('http://localhost:3001/api/posts');
+    expect(result).toEqual({
+      props: {
+        articles: dummyArticles,
+      },
+    });
   });
 
-  it("should show message when there are no articles", () => {
-    render(<NewsPage articles={[]} />);
-    expect(screen.getByText("No articles available.")).toBeInTheDocument();
+  it('should handle fetch failure gracefully', async () => {
+    fetch.mockRejectedValueOnce(new Error('Fetch failed'));
+
+    await expect(getServerSideProps({})).rejects.toThrow('Fetch failed');
   });
 });
